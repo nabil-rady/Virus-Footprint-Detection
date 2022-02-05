@@ -1,12 +1,15 @@
 import os 
 import shutil
 from subprocess import Popen, CalledProcessError, check_output, run, PIPE
-
+import sqlite3
 if __name__ == '__main__':  
     command = 'sudo bpftrace -e \'tracepoint:syscalls:sys_enter_exec*{ printf("pid: %d, comm: %s, args: ", pid, comm); join(args->argv); }\''
-    
+    conn = sqlite3.connect('footprint.db')
+    db = conn.cursor()
+
     with Popen(command, shell=True, stdout=PIPE, bufsize=1, universal_newlines=True) as p:
         for index, line in enumerate(p.stdout):
+            hashs = None
             if 'md5sum' in line or 'scanner.py' in line:
                 continue
             print(line, end='')
@@ -21,7 +24,10 @@ if __name__ == '__main__':
                         bin = shutil.which(bin)
                     if bin:
                         checksum = check_output(f'sudo md5sum {bin}', shell=True).split()[0]
-                        if checksum == b'bc80a17d8a16e91b9aaf13b5431ac445':
+                        query = f"SELECT * FROM Hashs WHERE hash={str(checksum)[1:]};"
+                        db.execute(query)
+                        hashs = db.fetchone()
+                        if hashs:
                             print("VIRUS STARTED")
                             run(f'sudo kill -9 {pid}', shell=True)
                             print('VIRUS KILLED')
@@ -30,7 +36,10 @@ if __name__ == '__main__':
                             arg = shutil.which(arg)
                         if arg:
                             checksum = check_output(f'sudo md5sum {arg}', shell=True).split()[0]
-                            if checksum == b'bc80a17d8a16e91b9aaf13b5431ac445':
+                            query = f"SELECT * FROM Hashs WHERE hash={str(checksum)[1:]};"
+                            db.execute(query)
+                            hashs = db.fetchone()
+                            if hashs:
                                 print("VIRUS STARTED")
                                 run(f'sudo kill -9 {pid}', shell=True)
                                 print('VIRUS KILLED')
