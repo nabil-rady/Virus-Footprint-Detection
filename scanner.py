@@ -1,12 +1,18 @@
-import os 
+import os
+import signal
 import shutil
 from subprocess import Popen, CalledProcessError, check_output, run, PIPE
 import sqlite3
+import hashlib
+
 if __name__ == '__main__':  
     command = 'sudo bpftrace -e \'tracepoint:syscalls:sys_enter_exec*{ printf("pid: %d, comm: %s, args: ", pid, comm); join(args->argv); }\''
+    
     conn = sqlite3.connect('footprint.db')
     db = conn.cursor()
-
+    
+    md5_hash = hashlib.md5()
+    
     with Popen(command, shell=True, stdout=PIPE, bufsize=1, universal_newlines=True) as p:
         for index, line in enumerate(p.stdout):
             hashs = None
@@ -23,26 +29,36 @@ if __name__ == '__main__':
                     if not os.path.exists(bin):
                         bin = shutil.which(bin)
                     if bin:
-                        checksum = check_output(f'sudo md5sum {bin}', shell=True).split()[0]
-                        query = f"SELECT * FROM Hashs WHERE hash={str(checksum)[1:]};"
+                        a_file = open(f"{bin[2:]}", "rb")
+                        content = a_file.read()
+                        md5_hash.update(content)
+                        checksum = md5_hash.hexdigest()
+                        query = f"SELECT * FROM Hashs WHERE hash='{str(checksum)}';"
                         db.execute(query)
-                        hashs = db.fetchone()
+                        hashs = db.fetchall()
                         if hashs:
                             print("VIRUS STARTED")
-                            run(f'sudo kill -9 {pid}', shell=True)
+                            os.kill(int(pid), signal.SIGKILL)
+                            # os.chmod(str(bin), 0)
                             print('VIRUS KILLED')
+                            hashs = None
                     for arg in args:
                         if not os.path.exists(arg):
                             arg = shutil.which(arg)
                         if arg:
-                            checksum = check_output(f'sudo md5sum {arg}', shell=True).split()[0]
-                            query = f"SELECT * FROM Hashs WHERE hash={str(checksum)[1:]};"
+                            a_file = open(f"{arg[2:]}", "rb")
+                            content = a_file.read()
+                            md5_hash.update(content)
+                            checksum = md5_hash.hexdigest()
+                            query = f"SELECT * FROM Hashs WHERE hash='{str(checksum)}';"
                             db.execute(query)
-                            hashs = db.fetchone()
+                            hashs = db.fetchall()
                             if hashs:
                                 print("VIRUS STARTED")
-                                run(f'sudo kill -9 {pid}', shell=True)
+                                os.kill(int(pid), signal.SIGKILL)
+                                # os.chmod(str(arg), 0)
                                 print('VIRUS KILLED')
+                                hashs = None
                 except Exception as e:
                     print('++++++++++++++++++++++++++++')
                     print(e)
