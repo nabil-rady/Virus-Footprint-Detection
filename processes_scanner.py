@@ -14,7 +14,7 @@ def scan_processes():
     with Popen(command, shell=True, stdout=PIPE, bufsize=1, universal_newlines=True) as p:
         for index, line in enumerate(p.stdout):
             hashs = None
-            if 'md5sum' in line or 'scanner.py' in line:
+            if 'md5sum' in line or 'chmod' in line:
                 continue
             print('-- PROCESS SCANNER --', line, end='')
             if index != 0:
@@ -48,8 +48,6 @@ def scan_processes():
                             arg = shutil.which(arg)
                         if arg:
                             if not os.path.isdir(arg):
-                                if args[0] == "chmod":
-                                    continue
                                 a_file = open(arg, "rb")
                                 content = a_file.read()
                                 md5_hash = hashlib.md5()
