@@ -17,7 +17,7 @@ def scan_files():
             flags, path = line.split(',')
             if '/proc' in path:
                 continue
-            if int(flags) & 0x0040 != 0: # O_CREAT = 0x100 flag indicates file creation in linux
+            if int(flags) & 0x0040 != 0: # O_CREAT = 0x0040 flag indicates file creation in linux
                 try:
                     print('-- FILE SCANNER --', line, end='')
                     path = path.strip()
@@ -32,14 +32,14 @@ def scan_files():
                         hashs = db.fetchall()
                         if hashs:
                             print('-- FILE SCANNER -- VIRUS DETECTED')
-                            call(['chmod', '000', f'{path}'])
+                            call(['chmod', '000', path])
                             print('-- FILE SCANNER -- VIRUS PREVENTED')
                             hashs = None
                 except FileNotFoundError:
                     continue
                 except Exception as e:
                     print('++++++++++++++++++++++++++++')
-                    print('- - FILE SCANNER --', e)
+                    print('-- FILE SCANNER --', e)
                     print('++++++++++++++++++++++++++++')
     if p.returncode != 0:
         raise CalledProcessError(p.returncode, p.args)

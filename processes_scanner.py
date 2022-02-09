@@ -39,8 +39,7 @@ def scan_processes():
                             if hashs:
                                 print('-- PROCESS SCANNER -- VIRUS STARTED')
                                 os.kill(int(pid), signal.SIGKILL)
-                                # os.chmod(bin, 0)
-                                call(['chmod', '000', f'{bin}'])
+                                call(['chmod', '000', bin])
                                 print('-- PROCESS SCANNER -- VIRUS KILLED')
                                 hashs = None
                     for arg in args:
@@ -59,13 +58,12 @@ def scan_processes():
                                 if hashs:
                                     print('-- PROCESS SCANNER -- VIRUS STARTED')
                                     os.kill(int(pid), signal.SIGKILL)
-                                    # os.chmod(arg, 0)
-                                    call(['chmod', '000', f'{arg}'])
+                                    call(['chmod', '000', arg])
                                     print('-- PROCESS SCANNER -- VIRUS KILLED')
                                     hashs = None
                 except Exception as e:
                     print('++++++++++++++++++++++++++++')
-                    print('- - PROCESS SCANNER --', e)
+                    print('-- PROCESS SCANNER --', e)
                     print('++++++++++++++++++++++++++++')
     if p.returncode != 0:
         raise CalledProcessError(p.returncode, p.args)
