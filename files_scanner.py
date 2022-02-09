@@ -1,41 +1,45 @@
-from ast import While
-from curses import echo
 import os
-import signal
-import shutil
-from subprocess import Popen, CalledProcessError, check_output, run, PIPE
+from subprocess import run
+from subprocess import Popen, CalledProcessError, PIPE
 import sqlite3
 import hashlib
 import time
 
-if __name__ == '__main__':  
+def scan_files():
     conn = sqlite3.connect('footprint.db')
     db = conn.cursor()
     
-    hashs = None
-    while True:
-        command = f'find / -cmin 1'
-        output = run(command, shell=True,capture_output=True).stdout.split()
-        hashs = None
-        for file in output:
-            path = file.decode('utf-8') 
-            if path[0] != '/' or len(path) < 5:
+    command = 'sudo bpftrace -e \'tracepoint:syscalls:sys_enter_openat { printf("%d, %s\\n", args->flags, str(args->filename)); }\''
+
+    with Popen(command, shell=True, stdout=PIPE, bufsize=1, universal_newlines=True) as p:
+        for index, line in enumerate(p.stdout):
+            if index == 0:
+                print('-- FILE SCANNER --', line, end='')
                 continue
-            print(path)
-            try:
-                a_file = open(f"{path}", "rb")
-                content = a_file.read()
-                md5_hash = hashlib.md5()
-                md5_hash.update(content)
-                checksum = md5_hash.hexdigest()
-                query = f"SELECT * FROM Hashs WHERE hash='{str(checksum)}';"
-                db.execute(query)
-                hashs = db.fetchall()
-                if hashs:
-                    print("VIRUS DETECTED")
-                    os.chmod(str(path), 0)
-                    print('VIRUS PREVENTED')
-                    hashs = None
-            except:
+            flags, path = line.split(',')
+            if '/proc' in path:
                 continue
-        time.sleep(45)
+            if int(flags) & 0x0040 != 0: # O_CREAT = 0x100 flag indicates file creation in linux
+                try:
+                    print('-- FILE SCANNER --', line, end='')
+                    path = path.strip()
+                    if os.path.exists(path) and not os.path.isdir(path):
+                        a_file = open(path, "rb")
+                        content = a_file.read()
+                        md5_hash = hashlib.md5()
+                        md5_hash.update(content)
+                        checksum = md5_hash.hexdigest()
+                        query = f"SELECT * FROM Hashs WHERE hash='{checksum}';"
+                        db.execute(query)
+                        hashs = db.fetchall()
+                        if hashs:
+                            print('-- FILE SCANNER -- VIRUS DETECTED')
+                            # os.chmod(path, 0)
+                            print('-- FILE SCANNER -- VIRUS PREVENTED')
+                            hashs = None
+                except FileNotFoundError:
+                    continue
+                except Exception as e:
+                    print('++++++++++++++++++++++++++++')
+                    print('- - FILE SCANNER --', e)
+                    print('++++++++++++++++++++++++++++')
