@@ -3,7 +3,7 @@ import signal
 import shutil
 import sqlite3
 import hashlib
-from subprocess import Popen, CalledProcessError, PIPE
+from subprocess import Popen, CalledProcessError, PIPE, call
 
 def scan_processes():
     command = 'sudo bpftrace -e \'tracepoint:syscalls:sys_enter_exec*{ printf("pid: %d, comm: %s, args: ", pid, comm); join(args->argv); }\''
@@ -40,6 +40,7 @@ def scan_processes():
                                 print('-- PROCESS SCANNER -- VIRUS STARTED')
                                 os.kill(int(pid), signal.SIGKILL)
                                 # os.chmod(bin, 0)
+                                call(['chmod', '000', f'{bin}'])
                                 print('-- PROCESS SCANNER -- VIRUS KILLED')
                                 hashs = None
                     for arg in args:
@@ -47,6 +48,8 @@ def scan_processes():
                             arg = shutil.which(arg)
                         if arg:
                             if not os.path.isdir(arg):
+                                if args[0] == "chmod":
+                                    continue
                                 a_file = open(arg, "rb")
                                 content = a_file.read()
                                 md5_hash = hashlib.md5()
@@ -59,6 +62,7 @@ def scan_processes():
                                     print('-- PROCESS SCANNER -- VIRUS STARTED')
                                     os.kill(int(pid), signal.SIGKILL)
                                     # os.chmod(arg, 0)
+                                    call(['chmod', '000', f'{arg}'])
                                     print('-- PROCESS SCANNER -- VIRUS KILLED')
                                     hashs = None
                 except Exception as e:

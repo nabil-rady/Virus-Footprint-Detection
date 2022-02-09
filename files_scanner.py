@@ -1,7 +1,7 @@
 import os
 import sqlite3
 import hashlib
-from subprocess import Popen, CalledProcessError, PIPE
+from subprocess import Popen, CalledProcessError, PIPE, call
 
 def scan_files():
     conn = sqlite3.connect('footprint.db')
@@ -32,7 +32,7 @@ def scan_files():
                         hashs = db.fetchall()
                         if hashs:
                             print('-- FILE SCANNER -- VIRUS DETECTED')
-                            # os.chmod(path, 0)
+                            call(['chmod', '000', f'{path}'])
                             print('-- FILE SCANNER -- VIRUS PREVENTED')
                             hashs = None
                 except FileNotFoundError:
