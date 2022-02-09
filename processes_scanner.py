@@ -1,9 +1,9 @@
 import os
 import signal
 import shutil
-from subprocess import Popen, CalledProcessError, PIPE
 import sqlite3
 import hashlib
+from subprocess import Popen, CalledProcessError, PIPE
 
 def scan_processes():
     command = 'sudo bpftrace -e \'tracepoint:syscalls:sys_enter_exec*{ printf("pid: %d, comm: %s, args: ", pid, comm); join(args->argv); }\''

@@ -1,9 +1,7 @@
 import os
-from subprocess import run
-from subprocess import Popen, CalledProcessError, PIPE
 import sqlite3
 import hashlib
-import time
+from subprocess import Popen, CalledProcessError, PIPE
 
 def scan_files():
     conn = sqlite3.connect('footprint.db')
@@ -43,3 +41,5 @@ def scan_files():
                     print('++++++++++++++++++++++++++++')
                     print('- - FILE SCANNER --', e)
                     print('++++++++++++++++++++++++++++')
+    if p.returncode != 0:
+        raise CalledProcessError(p.returncode, p.args)
