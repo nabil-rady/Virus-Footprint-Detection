@@ -17,7 +17,7 @@ def scan_files():
             flags, path = line.split(',')
             if '/proc' in path:
                 continue
-            if int(flags) & 0x0040 != 0: # O_CREAT = 0x0040 flag indicates file creation in linux
+            if int(flags) & 0o100 != 0: # O_CREAT = 0o100 flag indicates file creation in linux (fcntl.h)
                 try:
                     print('-- FILE SCANNER --', line, end='')
                     path = path.strip()

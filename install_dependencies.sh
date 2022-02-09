@@ -1,3 +1,3 @@
-#/usr/bin/bash
+#!/usr/bin/bash
 
 sudo apt install bpftrace
